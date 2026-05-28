@@ -139,6 +139,7 @@ class _ManagePackageFormState extends State<ManagePackageForm> {
         contactNumber: _contactController.text,
         image: images,
         isActive: _isActive,
+        popularityScore: widget.package?.popularityScore ?? 0,
         createdAt: widget.package?.createdAt ?? Timestamp.fromDate(now),
         updatedAt: Timestamp.fromDate(now),
       );
