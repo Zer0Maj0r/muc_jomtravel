@@ -18,7 +18,9 @@ class UserService {
         .collection('packages')
         .where('is_active', isEqualTo: true)
         .get();
-    return snapshot.docs.map((doc) => Package.fromMap(doc.data())).toList();
+    final packages = snapshot.docs.map((doc) => Package.fromMap(doc.data())).toList();
+    packages.sort(_comparePackagesByPopularity);
+    return packages;
   }
 
   Future<List<Package>> searchPackages(String query) async {
@@ -31,11 +33,21 @@ class UserService {
     }
 
     final lowerQuery = query.toLowerCase();
-    return allPackages.where((pkg) {
+    final results = allPackages.where((pkg) {
       final title = pkg.title.toLowerCase();
       final location = pkg.location.toLowerCase();
       return title.contains(lowerQuery) || location.contains(lowerQuery);
     }).toList();
+    results.sort(_comparePackagesByPopularity);
+    return results;
+  }
+
+  int _comparePackagesByPopularity(Package a, Package b) {
+    final scoreComparison = b.popularityScore.compareTo(a.popularityScore);
+    if (scoreComparison != 0) {
+      return scoreComparison;
+    }
+    return b.createdAt.compareTo(a.createdAt);
   }
 
   Future<void> savePendingProfile({required String name}) async {
