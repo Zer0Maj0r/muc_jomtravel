@@ -17,6 +17,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   final User? _currentUser = FirebaseAuth.instance.currentUser;
   late Future<List<Package>> _packagesFuture;
   final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedFilter = 'All';
+  final List<String> _filterOptions = [
+    'All',
+    'Heritage',
+    'Beach',
+    'Waterpark',
+    'Food',
+    'Family',
+  ];
 
   @override
   void initState() {
@@ -26,8 +36,35 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
   void _onSearchChanged(String query) {
     setState(() {
-      _packagesFuture = _userService.searchPackages(query);
+      _searchQuery = query;
     });
+  }
+
+  void _onFilterChanged(String filter) {
+    setState(() {
+      _selectedFilter = filter;
+    });
+  }
+
+  List<Package> _applyFilters(List<Package> packages) {
+    final query = _searchQuery.trim().toLowerCase();
+    final filtered = packages.where((pkg) {
+      final matchesSearch = query.isEmpty ||
+          pkg.title.toLowerCase().contains(query) ||
+          pkg.location.toLowerCase().contains(query) ||
+          pkg.description.toLowerCase().contains(query);
+
+      final matchesFilter = _selectedFilter == 'All' ||
+          pkg.title.toLowerCase().contains(_selectedFilter.toLowerCase()) ||
+          pkg.description.toLowerCase().contains(_selectedFilter.toLowerCase()) ||
+          pkg.location.toLowerCase().contains(_selectedFilter.toLowerCase()) ||
+          pkg.activities.any((activity) =>
+              activity.toLowerCase().contains(_selectedFilter.toLowerCase()));
+
+      return matchesSearch && matchesFilter;
+    }).toList();
+
+    return filtered.take(10).toList();
   }
 
   @override
@@ -99,11 +136,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       child: TextField(
                         controller: _searchController,
                         onChanged: _onSearchChanged,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Where to next?',
-                          hintStyle: TextStyle(color: AppColors.textLight),
+                          hintStyle: const TextStyle(color: AppColors.textLight),
                           border: InputBorder.none,
-                          icon: Icon(Icons.search, color: AppColors.primary),
+                          icon: const Icon(Icons.search, color: AppColors.primary),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, color: AppColors.primary),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _onSearchChanged('');
+                                  },
+                                )
+                              : null,
                         ),
                       ),
                     ),
@@ -115,8 +161,32 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
               /// Section Title
               const Text(
-                'Popular Packages',
+                'Top 10 Popular Packages',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 40,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _filterOptions.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final option = _filterOptions[index];
+                    final selected = option == _selectedFilter;
+                    return ChoiceChip(
+                      label: Text(option),
+                      selected: selected,
+                      onSelected: (_) => _onFilterChanged(option),
+                      selectedColor: AppColors.primary,
+                      backgroundColor: AppColors.cardBackground,
+                      labelStyle: TextStyle(
+                        color: selected ? Colors.white : AppColors.textPrimary,
+                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 12),
 
@@ -141,7 +211,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     );
                   }
 
-                  final packages = snapshot.data!;
+                  final packages = _applyFilters(snapshot.data!);
+
+                  if (packages.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: Text('No packages match your filters.', style: TextStyle(color: AppColors.textSecondary)),
+                      ),
+                    );
+                  }
 
                   return ListView.separated(
                     physics: const NeverScrollableScrollPhysics(),
@@ -163,3 +242,4 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     );
   }
 }
+
