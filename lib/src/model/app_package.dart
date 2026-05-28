@@ -16,6 +16,7 @@ class Package {
   final String contactNumber;
   final List<String> image;
   final bool isActive;
+  final int popularityScore;
   final Timestamp createdAt;
   final Timestamp updatedAt;
 
@@ -35,6 +36,7 @@ class Package {
     required this.contactNumber,
     required this.image,
     required this.isActive,
+    required this.popularityScore,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -56,6 +58,7 @@ class Package {
       contactNumber: map['contact_number'],
       image: List<String>.from(map['image_url'] ?? []),
       isActive: map['is_active'],
+      popularityScore: ((map['popularity_score'] ?? 0) as num).toInt(),
       createdAt: map['created_at'],
       updatedAt: map['updated_at'],
     );
@@ -78,8 +81,10 @@ class Package {
       'contact_number': contactNumber,
       'image_url': image,
       'is_active': isActive,
+      'popularity_score': popularityScore,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
   }
 }
+
