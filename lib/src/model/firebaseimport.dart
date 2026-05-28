@@ -172,11 +172,16 @@ Future<void> insertKelantanPackages() async {
     batch.set(docRef, {
       'package_id': packageId,
       ...pkg,
+      'popularity_score': pkg['popularity_score'] ?? 0,
       'is_active': true,
       'created_at': now,
       'updated_at': now,
     });
   }
+
+  //await batch.commit();
+}
+
 
   //await batch.commit();
 }
